@@ -33,11 +33,19 @@ track_uri = sp.search(q=f"{all_track_titles[0]},1996", type="track", limit=1)["t
 print(track_uri)
 
 # TODO 1b: get a list of 100 track URIs
-all_track_uris = [sp.search(q=f"{track_title},1996", type="track", limit=1)["tracks"]["items"][0]["uri"]
-                  for track_title in all_track_titles]
-
+# all_track_uris = [sp.search(q=f"{track_title},1996", type="track", limit=1)["tracks"]["items"][0]["uri"]
+#                   for track_title in all_track_titles]
+all_track_uris = []
 # TODO: 1c: handle IndexError for when there is no track available
+for track_title in all_track_titles:
+    try:
+        all_track_uris.append(sp.search(q=f"{track_title},1996", type="track", limit=1)["tracks"]["items"][0]["uri"])
+    except IndexError:
+        print("Track not found, skipping it")
+
 print(all_track_uris)
+
+
 # for song_title in all_song_titles:
 #     print(f"{all_song_titles.index(song_title)+1}) " + song_title)
 
