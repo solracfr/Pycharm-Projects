@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import json
-import pprint
+from pprint import pprint
 import requests
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -16,7 +16,9 @@ auth_manager = SpotifyOAuth(scope=scope, client_secret=SPOTIPY_CLIENT_SECRET,
                             cache_path="token.txt")
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
+user = sp.current_user()
 user_id = sp.current_user()["id"]
+print(user_id)
 
 # TODO 1: Create list of Spotify song URIs for the list of song names found from step 1
 # TODO 1?: lookup how to make a playlist using spotipy
@@ -43,7 +45,20 @@ for track_title in all_track_titles:
     except IndexError:
         print("Track not found, skipping it")
 
-print(all_track_uris)
+pprint(all_track_uris)  # needs to import pprint from pprint
+playlist_uri = "spotify:playlist:1U2Uadw6xbs6O7401Hz14g"  # get the playlist
+
+try:
+    playlist = sp.playlist(playlist_uri)  # find the playlist using uri
+    print("Playlist has been found")
+except:
+    playlist = sp.user_playlist_create(user=user_id, name="Billboard 18Dec1996",
+                                       public=False, description="Nice fun cool and awesome playlist using spotipy")
+    print("No playlist found, so we created one!")
+finally:
+    print(f"your playlist id is {playlist['id']}")
+    #  add songs to playlist
+    sp.playlist_add_items(playlist_id=playlist_uri, items=all_track_uris)
 
 
 # for song_title in all_song_titles:
