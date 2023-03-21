@@ -1,4 +1,6 @@
 from bs4 import BeautifulSoup
+import json
+from pprint import pprint
 import requests
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -14,7 +16,56 @@ auth_manager = SpotifyOAuth(scope=scope, client_secret=SPOTIPY_CLIENT_SECRET,
                             cache_path="token.txt")
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
+user = sp.current_user()
 user_id = sp.current_user()["id"]
+print(user_id)
+
+# TODO 1: Create list of Spotify song URIs for the list of song names found from step 1
+# TODO 1?: lookup how to make a playlist using spotipy
+
+
+response = requests.get(f"https://www.billboard.com/charts/hot-100/1996-12-18/")
+billboard_web_page = response.text
+
+soup = BeautifulSoup(billboard_web_page, "html.parser")
+all_track_titles = [tag.getText().strip() for tag in soup.select(selector=".c-title.a-no-trucate")]  # > finds tags DIRECTLY beneath other tags, no deeper children
+
+# TODO 1a: Find track URI
+track_uri = sp.search(q=f"{all_track_titles[0]},1996", type="track", limit=1)["tracks"]["items"][0]["uri"]
+print(track_uri)
+
+# TODO 1b: get a list of 100 track URIs
+# all_track_uris = [sp.search(q=f"{track_title},1996", type="track", limit=1)["tracks"]["items"][0]["uri"]
+#                   for track_title in all_track_titles]
+all_track_uris = []
+# TODO: 1c: handle IndexError for when there is no track available
+for track_title in all_track_titles:
+    try:
+        all_track_uris.append(sp.search(q=f"{track_title},1996", type="track", limit=1)["tracks"]["items"][0]["uri"])
+    except IndexError:
+        print("Track not found, skipping it")
+
+pprint(all_track_uris)  # needs to import pprint from pprint
+playlist_uri = "spotify:playlist:1U2Uadw6xbs6O7401Hz14g"  # get the playlist
+
+try:
+    playlist = sp.playlist(playlist_uri)  # find the playlist using uri
+    print("Playlist has been found")
+except:
+    playlist = sp.user_playlist_create(user=user_id, name="Billboard 18Dec1996",
+                                       public=False, description="Nice fun cool and awesome playlist using spotipy")
+    print("No playlist found, so we created one!")
+finally:
+    print(f"your playlist id is {playlist['id']}")
+    #  add songs to playlist
+    sp.playlist_add_items(playlist_id=playlist_uri, items=all_track_uris)
+
+
+# for song_title in all_song_titles:
+#     print(f"{all_song_titles.index(song_title)+1}) " + song_title)
+
+TEST_URI = "spotify:track:5Ihd9HrPvOADyVoonH9ZjB"
+
 
 # import lxml  # used if html parsing doesn't work
 #
@@ -58,14 +109,7 @@ user_id = sp.current_user()["id"]
 
 # date = input("Which year do you want to travel to? Type the date in this format YYYY-MM-DD: ")
 # -----------------------------------------------------------------------------------------------#
-# response = requests.get(f"https://www.billboard.com/charts/hot-100/1996-12-18/")
-# billboard_web_page = response.text
-#
-# soup = BeautifulSoup(billboard_web_page, "html.parser")
-# all_song_titles = [tag.getText().strip() for tag in soup.select(selector=".c-title.a-no-trucate")]  # > finds tags DIRECTLY beneath other tags, no deeper children
-#
-# for song_title in all_song_titles:
-#     print(f"{all_song_titles.index(song_title)+1}) " + song_title)
+
 # -----------------------------------------------------------------------------------------------#
 # all_song_titles.reverse()  # no need to assign this to a variable, interestingly
 # all_titles[::-1]  # could work as well
